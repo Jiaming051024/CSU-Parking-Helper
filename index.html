@@ -51,8 +51,18 @@
     <!-- Main Content -->
     <main class="max-w-md w-full mx-auto px-4 pt-4 flex-1 flex flex-col space-y-4">
 
-        <!-- Parking Status Card -->
-        <section id="parkingStatusSection"></section>
+        <!-- Parking Status Card (預載面板，確保畫面不遺漏) -->
+        <section id="parkingStatusSection">
+            <div class="glass-panel p-6 rounded-3xl border border-zinc-800 shadow-lg text-center space-y-3">
+                <div>
+                    <h2 class="text-base font-bold text-white">目前尚未紀錄車位</h2>
+                    <p class="text-xs text-zinc-400 mt-1">停好車後點擊下方按鈕，秒記停放位置與柱號</p>
+                </div>
+                <button type="button" onclick="openRecordModal()" class="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-bold py-3 px-4 rounded-xl shadow-md transition active:scale-[0.98]">
+                    馬上紀錄車位
+                </button>
+            </div>
+        </section>
 
         <!-- Quick Actions Grid -->
         <section class="grid grid-cols-2 gap-3">
@@ -79,7 +89,7 @@
             </button>
         </section>
 
-        <!-- Quick Lots Preset -->
+        <!-- Quick Lots Preset (預載按鈕，防動態生成失敗) -->
         <section class="glass-panel p-4 rounded-2xl border border-zinc-800 shadow-sm">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center space-x-1.5">
@@ -87,7 +97,14 @@
                     <span>校園地圖地號快捷選擇</span>
                 </h3>
             </div>
-            <div class="grid grid-cols-2 gap-2 text-xs" id="quickLotsGrid"></div>
+            <div class="grid grid-cols-2 gap-2 text-xs" id="quickLotsGrid">
+                <button type="button" onclick="quickSelectLot('[02] 前門 A棟機車停車場')" class="bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 p-2.5 rounded-xl text-left truncate transition active:scale-95"><span class="truncate">[02] 前門 A棟機車停車場</span></button>
+                <button type="button" onclick="quickSelectLot('[11] 後門 D棟機車停車場')" class="bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 p-2.5 rounded-xl text-left truncate transition active:scale-95"><span class="truncate">[11] 後門 D棟機車停車場</span></button>
+                <button type="button" onclick="quickSelectLot('[03] 綜合行政大樓周邊')" class="bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 p-2.5 rounded-xl text-left truncate transition active:scale-95"><span class="truncate">[03] 綜合行政大樓周邊</span></button>
+                <button type="button" onclick="quickSelectLot('[04] 體育館 / 體育室周邊')" class="bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 p-2.5 rounded-xl text-left truncate transition active:scale-95"><span class="truncate">[04] 體育館 / 體育室周邊</span></button>
+                <button type="button" onclick="quickSelectLot('[15] 圖書科技大樓 (圖資)')" class="bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 p-2.5 rounded-xl text-left truncate transition active:scale-95"><span class="truncate">[15] 圖書科技大樓 (圖資)</span></button>
+                <button type="button" onclick="quickSelectLot('[19] 正修宿舍機車棚區')" class="bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 p-2.5 rounded-xl text-left truncate transition active:scale-95"><span class="truncate">[19] 正修宿舍機車棚區</span></button>
+            </div>
         </section>
 
         <!-- Navigation Card (Shown when parked) -->
@@ -206,31 +223,21 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        let currentParking = null;
-        let parkingHistory = [];
-        let timerInterval = null;
-        let selectedBase64Photo = '';
+        var currentParking = null;
+        var parkingHistory = [];
+        var timerInterval = null;
+        var selectedBase64Photo = '';
 
-        const csuLocations = [
-            "[02] 前門 A棟機車停車場",
-            "[11] 後門 D棟機車停車場",
-            "[03] 綜合行政大樓周邊",
-            "[04] 體育館 / 體育室周邊",
-            "[15] 圖書科技大樓 (圖資)",
-            "[19] 正修宿舍機車棚區"
-        ];
-
-        // 核心視窗控制（獨立置頂，確保不被背景錯誤干擾）
         function openRecordModal() {
-            const modal = document.getElementById('recordModal');
+            var modal = document.getElementById('recordModal');
             if (modal) modal.style.display = 'flex';
         }
 
         function closeRecordModal() {
-            const modal = document.getElementById('recordModal');
+            var modal = document.getElementById('recordModal');
             if (modal) modal.style.display = 'none';
             try {
-                const form = document.getElementById('parkingForm');
+                var form = document.getElementById('parkingForm');
                 if (form) form.reset();
                 removePhoto();
             } catch(e) {}
@@ -238,34 +245,33 @@
 
         function openHistoryModal() {
             renderHistoryList();
-            const modal = document.getElementById('historyModal');
+            var modal = document.getElementById('historyModal');
             if (modal) modal.style.display = 'flex';
         }
 
         function closeHistoryModal() {
-            const modal = document.getElementById('historyModal');
+            var modal = document.getElementById('historyModal');
             if (modal) modal.style.display = 'none';
         }
 
-        function initApp() {
-            try {
-                loadFromLocalStorage();
-                renderQuickLotsGrid();
-                renderDashboard();
-                startTimer();
-            } catch(e) {
-                console.error("Init Error:", e);
-            }
+        function quickSelectLot(lotName) {
+            var select = document.getElementById('lotSelect');
+            if (select) select.value = lotName;
+            openRecordModal();
         }
 
         function loadFromLocalStorage() {
             try {
-                const savedCurrent = localStorage.getItem('csu_current_parking');
-                const savedHistory = localStorage.getItem('csu_parking_history');
+                var savedCurrent = localStorage.getItem('csu_current_parking');
                 if (savedCurrent) currentParking = JSON.parse(savedCurrent);
+            } catch (e) {
+                currentParking = null;
+            }
+            try {
+                var savedHistory = localStorage.getItem('csu_parking_history');
                 if (savedHistory) parkingHistory = JSON.parse(savedHistory);
             } catch (e) {
-                console.warn('LocalStorage error:', e);
+                parkingHistory = [];
             }
         }
 
@@ -277,99 +283,79 @@
                     localStorage.removeItem('csu_current_parking');
                 }
                 localStorage.setItem('csu_parking_history', JSON.stringify(parkingHistory));
-            } catch (e) {
-                console.warn('Save error:', e);
-            }
+            } catch (e) {}
         }
 
         function renderDashboard() {
-            const statusSection = document.getElementById('parkingStatusSection');
-            const navCard = document.getElementById('navigationCard');
+            var statusSection = document.getElementById('parkingStatusSection');
+            var navCard = document.getElementById('navigationCard');
             if (!statusSection) return;
 
             if (currentParking) {
                 if (navCard) navCard.style.display = 'block';
-                statusSection.innerHTML = `
-                    <div class="glass-panel p-5 rounded-3xl border border-zinc-600 shadow-xl relative overflow-hidden">
-                        <div class="absolute top-0 right-0 bg-zinc-200 text-zinc-950 font-extrabold text-[10px] uppercase tracking-wider px-3 py-1 rounded-bl-xl shadow">
-                            停放中 ACTIVE
-                        </div>
-                        <div class="text-xs text-zinc-400 mb-1">目前車位位置</div>
-                        <div class="text-xl font-black text-white tracking-tight mb-2">${escapeHtml(currentParking.lotName)}</div>
-                        <div class="inline-flex items-center space-x-2 bg-zinc-800 border border-zinc-700 text-zinc-200 px-3 py-1 rounded-xl text-sm font-bold mb-4">
-                            <span>${escapeHtml(currentParking.floor || '1F')} · 柱號: ${escapeHtml(currentParking.spotCode)}</span>
-                        </div>
-                        <div class="bg-zinc-900 rounded-2xl p-3.5 border border-zinc-800 mb-4 flex items-center justify-between">
-                            <span class="text-zinc-400 text-xs">已停放總時數：</span>
-                            <span id="liveTimerText" class="text-base font-black text-white font-mono">00 小時 00 分 00 秒</span>
-                        </div>
-                        ${currentParking.photo ? `<img src="${currentParking.photo}" class="w-full h-36 object-cover rounded-xl mb-4 border border-zinc-700">` : ''}
-                        ${currentParking.memo ? `<div class="text-xs text-zinc-300 bg-zinc-800/50 p-2.5 rounded-xl border border-zinc-700/50 mb-4">${escapeHtml(currentParking.memo)}</div>` : ''}
-                        <button type="button" onclick="confirmEndParking()" class="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white text-xs font-bold py-2.5 rounded-xl transition">
-                            離場 / 結束停車
-                        </button>
-                    </div>
-                `;
+                statusSection.innerHTML = 
+                    '<div class="glass-panel p-5 rounded-3xl border border-zinc-600 shadow-xl relative overflow-hidden">' +
+                        '<div class="absolute top-0 right-0 bg-zinc-200 text-zinc-950 font-extrabold text-[10px] uppercase tracking-wider px-3 py-1 rounded-bl-xl shadow">' +
+                            '停放中 ACTIVE' +
+                        '</div>' +
+                        '<div class="text-xs text-zinc-400 mb-1">目前車位位置</div>' +
+                        '<div class="text-xl font-black text-white tracking-tight mb-2">' + escapeHtml(currentParking.lotName) + '</div>' +
+                        '<div class="inline-flex items-center space-x-2 bg-zinc-800 border border-zinc-700 text-zinc-200 px-3 py-1 rounded-xl text-sm font-bold mb-4">' +
+                            '<span>' + escapeHtml(currentParking.floor || '1F') + ' · 柱號: ' + escapeHtml(currentParking.spotCode) + '</span>' +
+                        '</div>' +
+                        '<div class="bg-zinc-900 rounded-2xl p-3.5 border border-zinc-800 mb-4 flex items-center justify-between">' +
+                            '<span class="text-zinc-400 text-xs">已停放總時數：</span>' +
+                            '<span id="liveTimerText" class="text-base font-black text-white font-mono">00 小時 00 分 00 秒</span>' +
+                        '</div>' +
+                        (currentParking.photo ? '<img src="' + currentParking.photo + '" class="w-full h-36 object-cover rounded-xl mb-4 border border-zinc-700">' : '') +
+                        (currentParking.memo ? '<div class="text-xs text-zinc-300 bg-zinc-800/50 p-2.5 rounded-xl border border-zinc-700/50 mb-4">' + escapeHtml(currentParking.memo) + '</div>' : '') +
+                        '<button type="button" onclick="confirmEndParking()" class="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white text-xs font-bold py-2.5 rounded-xl transition">' +
+                            '離場 / 結束停車' +
+                        '</button>' +
+                    '</div>';
             } else {
                 if (navCard) navCard.style.display = 'none';
-                statusSection.innerHTML = `
-                    <div class="glass-panel p-6 rounded-3xl border border-zinc-800 shadow-lg text-center space-y-3">
-                        <div>
-                            <h2 class="text-base font-bold text-white">目前尚未紀錄車位</h2>
-                            <p class="text-xs text-zinc-400 mt-1">停好車後點擊下方按鈕，秒記停放位置與柱號</p>
-                        </div>
-                        <button type="button" onclick="openRecordModal()" class="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-bold py-3 px-4 rounded-xl shadow-md transition active:scale-[0.98]">
-                            馬上紀錄車位
-                        </button>
-                    </div>
-                `;
+                statusSection.innerHTML = 
+                    '<div class="glass-panel p-6 rounded-3xl border border-zinc-800 shadow-lg text-center space-y-3">' +
+                        '<div>' +
+                            '<h2 class="text-base font-bold text-white">目前尚未紀錄車位</h2>' +
+                            '<p class="text-xs text-zinc-400 mt-1">停好車後點擊下方按鈕，秒記停放位置與柱號</p>' +
+                        '</div>' +
+                        '<button type="button" onclick="openRecordModal()" class="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-bold py-3 px-4 rounded-xl shadow-md transition active:scale-[0.98]">' +
+                            '馬上紀錄車位' +
+                        '</button>' +
+                    '</div>';
             }
             updateTimerDisplay();
         }
 
-        function renderQuickLotsGrid() {
-            const grid = document.getElementById('quickLotsGrid');
-            if (!grid) return;
-            grid.innerHTML = csuLocations.map(loc => `
-                <button type="button" onclick="quickSelectLot('${loc}')" class="bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 p-2.5 rounded-xl text-left truncate transition active:scale-95">
-                    <span class="truncate">${loc}</span>
-                </button>
-            `).join('');
-        }
-
-        function quickSelectLot(lotName) {
-            const select = document.getElementById('lotSelect');
-            if (select) select.value = lotName;
-            openRecordModal();
-        }
-
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => { updateTimerDisplay(); }, 1000);
+            timerInterval = setInterval(function() { updateTimerDisplay(); }, 1000);
         }
 
         function updateTimerDisplay() {
-            const timerEl = document.getElementById('liveTimerText');
+            var timerEl = document.getElementById('liveTimerText');
             if (!timerEl || !currentParking) return;
-            const diffSeconds = Math.max(0, Math.floor((new Date().getTime() - new Date(currentParking.startTime).getTime()) / 1000));
-            const pad = (n) => n.toString().padStart(2, '0');
-            timerEl.innerText = `${pad(Math.floor(diffSeconds / 3600))} 小時 ${pad(Math.floor((diffSeconds % 3600) / 60))} 分 ${pad(diffSeconds % 60)} 秒`;
+            var diffSeconds = Math.max(0, Math.floor((new Date().getTime() - new Date(currentParking.startTime).getTime()) / 1000));
+            var pad = function(n) { return n.toString().padStart(2, '0'); };
+            timerEl.innerText = pad(Math.floor(diffSeconds / 3600)) + ' 小時 ' + pad(Math.floor((diffSeconds % 3600) / 60)) + ' 分 ' + pad(diffSeconds % 60) + ' 秒';
         }
 
         function getGPSLocation() {
-            const gpsText = document.getElementById('gpsStatusText');
+            var gpsText = document.getElementById('gpsStatusText');
             if (!navigator.geolocation) return showToast("裝置不支援 GPS");
             gpsText.innerText = "定位中...";
             navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const lat = pos.coords.latitude.toFixed(6);
-                    const lng = pos.coords.longitude.toFixed(6);
+                function(pos) {
+                    var lat = pos.coords.latitude.toFixed(6);
+                    var lng = pos.coords.longitude.toFixed(6);
                     document.getElementById('latInput').value = lat;
                     document.getElementById('lngInput').value = lng;
-                    gpsText.innerText = `經緯度: ${lat}, ${lng}`;
+                    gpsText.innerText = '經緯度: ' + lat + ', ' + lng;
                     showToast("GPS 定位成功！");
                 },
-                () => { gpsText.innerText = "定位失敗"; showToast("GPS 存取受阻"); },
+                function() { gpsText.innerText = "定位失敗"; showToast("GPS 存取受阻"); },
                 { enableHighAccuracy: true, timeout: 10000 }
             );
         }
@@ -380,21 +366,21 @@
         }
 
         function handlePhotoSelect(event) {
-            const file = event.target.files[0];
+            var file = event.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
+            var reader = new FileReader();
             reader.onload = function(e) {
-                const img = new Image();
+                var img = new Image();
                 img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height, max = 800;
+                    var canvas = document.createElement('canvas');
+                    var w = img.width, h = img.height, max = 800;
                     if (w > h && w > max) { h = Math.round((h * max) / w); w = max; }
                     else if (h > max) { w = Math.round((w * max) / h); h = max; }
                     canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                     selectedBase64Photo = canvas.toDataURL('image/jpeg', 0.75);
                     document.getElementById('photoPreview').src = selectedBase64Photo;
-                    const previewContainer = document.getElementById('photoPreviewContainer');
+                    var previewContainer = document.getElementById('photoPreviewContainer');
                     if (previewContainer) previewContainer.style.display = 'block';
                 };
                 img.src = e.target.result;
@@ -404,14 +390,14 @@
 
         function removePhoto() {
             selectedBase64Photo = '';
-            const previewContainer = document.getElementById('photoPreviewContainer');
+            var previewContainer = document.getElementById('photoPreviewContainer');
             if (previewContainer) previewContainer.style.display = 'none';
         }
 
         function saveParkingRecord(event) {
             event.preventDefault();
-            const lotName = document.getElementById('lotSelect').value;
-            const spotCode = document.getElementById('spotInput').value.trim();
+            var lotName = document.getElementById('lotSelect').value;
+            var spotCode = document.getElementById('spotInput').value.trim();
             if (!lotName || !spotCode) return showToast("請填寫完整資訊！");
 
             currentParking = {
@@ -434,9 +420,74 @@
 
         function confirmEndParking() {
             if (!currentParking) return;
-            const diffMin = Math.max(1, Math.floor((new Date().getTime() - new Date(currentParking.startTime).getTime()) / 60000));
-            parkingHistory.unshift({
-                ...currentParking,
-                durationStr: `${Math.floor(diffMin / 60)}小時 ${diffMin % 60}分`
-            });
+            var diffMin = Math.max(1, Math.floor((new Date().getTime() - new Date(currentParking.startTime).getTime()) / 60000));
+            parkingHistory.unshift(Object.assign({}, currentParking, {
+                durationStr: Math.floor(diffMin / 60) + '小時 ' + (diffMin % 60) + '分'
+            }));
             currentParking = null;
+            saveToLocalStorage();
+            renderDashboard();
+            showToast("停車紀錄已結算歸檔");
+        }
+
+        function renderHistoryList() {
+            var listEl = document.getElementById('historyList');
+            if (!listEl) return;
+            if (parkingHistory.length === 0) {
+                listEl.innerHTML = '<div class="text-center text-xs text-zinc-500 py-8">尚無歷史紀錄</div>';
+                return;
+            }
+            listEl.innerHTML = parkingHistory.map(function(item) {
+                return '<div class="bg-zinc-800/60 border border-zinc-700/80 rounded-xl p-3 text-xs space-y-1">' +
+                    '<div class="font-bold text-zinc-200">' + escapeHtml(item.lotName) + ' (' + escapeHtml(item.spotCode) + ')</div>' +
+                    '<div class="text-zinc-400">時長：' + item.durationStr + '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function confirmClearHistory() {
+            parkingHistory = [];
+            saveToLocalStorage();
+            renderHistoryList();
+            showToast("歷史紀錄已清空");
+        }
+
+        function openAppleMaps() {
+            if (!currentParking) return;
+            if (currentParking.lat && currentParking.lng) {
+                window.location.href = 'https://maps.apple.com/?daddr=' + currentParking.lat + ',' + currentParking.lng + '&dirflg=w';
+            } else {
+                window.location.href = 'https://maps.apple.com/?q=' + encodeURIComponent('正修科技大學 ' + currentParking.lotName) + '&dirflg=w';
+            }
+        }
+
+        function openGoogleMaps() {
+            if (!currentParking) return;
+            if (currentParking.lat && currentParking.lng) {
+                window.open('https://www.google.com/maps/dir/?api=1&destination=' + currentParking.lat + ',' + currentParking.lng + '&travelmode=walking', '_blank');
+            } else {
+                window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('正修科技大學 ' + currentParking.lotName), '_blank');
+            }
+        }
+
+        function showToast(msg) {
+            var toast = document.getElementById('toast');
+            if (!toast) return;
+            document.getElementById('toastMsg').innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(function() { toast.style.display = 'none'; }, 2200);
+        }
+
+        function escapeHtml(str) {
+            return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // 立即執行資料初始化
+        try {
+            loadFromLocalStorage();
+            renderDashboard();
+            startTimer();
+        } catch(e) {}
+    </script>
+</body>
+</html>
