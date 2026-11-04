@@ -84,7 +84,7 @@
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center space-x-1.5">
                     <svg class="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/></svg>
-                    <span>正修科大熱門停車場快捷標記</span>
+                    <span>校園地圖地號快捷選擇</span>
                 </h3>
             </div>
             <div class="grid grid-cols-2 gap-2 text-xs" id="quickLotsGrid"></div>
@@ -128,13 +128,13 @@
                     <label class="block text-xs font-semibold text-zinc-300 mb-1.5">1. 選擇校內/周邊停車場 *</label>
                     <select id="lotSelect" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-zinc-400 transition">
                         <option value="" disabled selected>請選擇停車場區塊...</option>
-                        <option value="正門 / 行政大樓機車區">正門 / 行政大樓機車區</option>
-                        <option value="後門 / 宿舍區機車棚 A 區">後門 / 宿舍區機車棚 A 區</option>
-                        <option value="後門 / 宿舍區機車棚 B 區">後門 / 宿舍區機車棚 B 區</option>
-                        <option value="後門 / 宿舍區機車棚 C 區">後門 / 宿舍區機車棚 C 區</option>
-                        <option value="體育館周邊停車區">體育館周邊停車區</option>
-                        <option value="圖資大樓地下室 (B1/B2)">圖資大樓地下室 (B1/B2)</option>
-                        <option value="校外周邊格位 / 自訂區域">校外周邊格位 / 自訂區域</option>
+                        <option value="[02] 前門 A棟機車停車場">[02] 前門 A棟機車停車場</option>
+                        <option value="[11] 後門 D棟機車停車場">[11] 後門 D棟機車停車場</option>
+                        <option value="[03] 綜合行政大樓周邊">[03] 綜合行政大樓周邊</option>
+                        <option value="[04] 體育館 / 體育室周邊">[04] 體育館 / 體育室周邊</option>
+                        <option value="[15] 圖書科技大樓 (圖資)">[15] 圖書科技大樓 (圖資)</option>
+                        <option value="[19] 正修宿舍機車棚區">[19] 正修宿舍機車棚區</option>
+                        <option value="[校外] 周邊格位 / 自訂區域">[校外] 周邊格位 / 自訂區域</option>
                     </select>
                 </div>
 
@@ -214,12 +214,12 @@
         let selectedBase64Photo = '';
 
         const csuLocations = [
-            "正門 / 行政大樓機車區",
-            "後門 / 宿舍區機車棚 A 區",
-            "後門 / 宿舍區機車棚 B 區",
-            "後門 / 宿舍區機車棚 C 區",
-            "體育館周邊停車區",
-            "圖資大樓地下室 (B1/B2)"
+            "[02] 前門 A棟機車停車場",
+            "[11] 後門 D棟機車停車場",
+            "[03] 綜合行政大樓周邊",
+            "[04] 體育館 / 體育室周邊",
+            "[15] 圖書科技大樓 (圖資)",
+            "[19] 正修宿舍機車棚區"
         ];
 
         window.onload = function() {
@@ -393,97 +393,4 @@
             currentParking = {
                 id: 'park_' + Date.now(),
                 lotName: lotName,
-                floor: document.getElementById('floorInput').value.trim() || '1F',
-                spotCode: spotCode,
-                lat: document.getElementById('latInput').value,
-                lng: document.getElementById('lngInput').value,
-                photo: selectedBase64Photo,
-                memo: document.getElementById('memoInput').value.trim(),
-                startTime: new Date().toISOString()
-            };
-
-            saveToLocalStorage();
-            renderDashboard();
-            closeRecordModal();
-            showToast("已成功儲存車位紀錄！");
-        }
-
-        function confirmEndParking() {
-            if (!currentParking) return;
-            const diffMin = Math.max(1, Math.floor((new Date().getTime() - new Date(currentParking.startTime).getTime()) / 60000));
-            parkingHistory.unshift({
-                ...currentParking,
-                durationStr: `${Math.floor(diffMin / 60)}小時 ${diffMin % 60}分`
-            });
-            currentParking = null;
-            saveToLocalStorage();
-            renderDashboard();
-            showToast("停車紀錄已結算歸檔");
-        }
-
-        function openHistoryModal() {
-            renderHistoryList();
-            const modal = document.getElementById('historyModal');
-            if (modal) modal.classList.remove('hidden');
-        }
-
-        function closeHistoryModal() {
-            const modal = document.getElementById('historyModal');
-            if (modal) modal.classList.add('hidden');
-        }
-
-        function renderHistoryList() {
-            const listEl = document.getElementById('historyList');
-            if (!listEl) return;
-            if (parkingHistory.length === 0) {
-                listEl.innerHTML = `<div class="text-center text-xs text-zinc-500 py-8">尚無歷史紀錄</div>`;
-                return;
-            }
-            listEl.innerHTML = parkingHistory.map(item => `
-                <div class="bg-zinc-800/60 border border-zinc-700/80 rounded-xl p-3 text-xs space-y-1">
-                    <div class="font-bold text-zinc-200">${escapeHtml(item.lotName)} (${escapeHtml(item.spotCode)})</div>
-                    <div class="text-zinc-400">時長：${item.durationStr}</div>
-                </div>
-            `).join('');
-        }
-
-        function confirmClearHistory() {
-            parkingHistory = [];
-            saveToLocalStorage();
-            renderHistoryList();
-            showToast("歷史紀錄已清空");
-        }
-
-        function openAppleMaps() {
-            if (!currentParking) return;
-            if (currentParking.lat && currentParking.lng) {
-                window.location.href = `https://maps.apple.com/?daddr=${currentParking.lat},${currentParking.lng}&dirflg=w`;
-            } else {
-                window.location.href = `https://maps.apple.com/?q=${encodeURIComponent('正修科技大學 ' + currentParking.lotName)}&dirflg=w`;
-            }
-        }
-
-        function openGoogleMaps() {
-            if (!currentParking) return;
-            if (currentParking.lat && currentParking.lng) {
-                window.open(`https://www.google.com/maps/dir/?api=1&destination=${currentParking.lat},${currentParking.lng}&travelmode=walking`, '_blank');
-            } else {
-                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('正修科技大學 ' + currentParking.lotName)}`, '_blank');
-            }
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMsg');
-            if (!toast || !toastMsg) return;
-            toastMsg.innerText = msg;
-            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
-            setTimeout(() => { toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4'); }, 2200);
-        }
-
-        function escapeHtml(str) {
-            return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-    </script>
-</body>
-</html>
+                floor: document.getElementById('floorInput').value.trim() || '
